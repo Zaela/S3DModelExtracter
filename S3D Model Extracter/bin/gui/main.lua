@@ -18,7 +18,7 @@ end
 local dir_list = require "gui/dir_list"
 local model_list = require "gui/model_list"
 
-local title = "S3D Model Extracter v0.1"
+local title = "S3D Model Extracter v0.2"
 local window
 
 local function SetSearchFolder()

@@ -593,6 +593,36 @@ namespace WLD
 		return 3;
 	}
 
+	int Rename(lua_State* L)
+	{
+		const char* from = luaL_checkstring(L, 2);
+		const char* to = luaL_checkstring(L, 3);
+
+		lua_getfield(L, 1, "ptr");
+		byte* data = (byte*)lua_touserdata(L, -1);
+		lua_pop(L, 1);
+
+		Header* header = (Header*)data;
+		const uint32 strings_len = header->nameHashLen;
+		char* end = (char*)&data[Header::SIZE + strings_len];
+		char* str = (char*)&data[Header::SIZE];
+
+		DecodeName(str, strings_len);
+
+		while (str < end)
+		{
+			char* match = strstr(str, from);
+			if (match && (match - str) <= 4)
+			{
+				memcpy(match, to, 3);
+			}
+			str += strlen(str) + 1;
+		}
+
+		DecodeName(&data[Header::SIZE], strings_len);
+		return 0;
+	}
+
 	int GetName(lua_State* L)
 	{
 		LuaFrag* lf = (LuaFrag*)luaL_checkudata(L, 1, "WLDFrag");
@@ -604,6 +634,7 @@ namespace WLD
 		{"Read", Read},
 		{"Close", Close},
 		{"Extract", Extract},
+		{"Rename", Rename},
 		{nullptr, nullptr}
 	};
 

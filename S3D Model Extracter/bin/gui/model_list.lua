@@ -120,11 +120,50 @@ local function Extract()
 	end
 end
 
+local function Rename()
+	if not wld_ent or not cur then return end
+	local from = cur_name:sub(1, 3)
+	local name
+	local input = iup.text{visiblecolumns = 3, value = from, mask = "/l/l/l"}
+	local getid
+	local but = iup.button{title = "Done", action = function() name = input.value; getid:hide() end}
+	getid = iup.dialog{iup.vbox{
+		iup.label{title = "Enter a new 3-letter name for this model:"},
+		input, but, gap = 12, nmargin = "15x15", alignment = "ACENTER"};
+		k_any = function(self, key) if key == iup.K_CR then but:action() end end}
+	iup.Popup(getid)
+	iup.Destroy(getid)
+	if name and name:len() >= 3 then
+		name = name:upper()
+		local s, err = pcall(wld.Rename, wld_ent, from, name)
+		if s then
+			local wld_name = from:lower() .. "_chr.wld"
+			for i, ent in ipairs(open_dir) do
+				if ent.name == wld_name then
+					local new_name = name:sub(1, 3):lower() .. "_chr.wld"
+					ent.name = new_name
+					ent.crc = eqg.CalcCRC(new_name)
+					break
+				end
+			end
+			s, err = pcall(eqg.WriteDirectory, open_path, open_dir)
+			if s then
+				UpdateModelList(open_path)
+				return
+			end
+		end
+		error_popup(err)
+	end
+end
+
 function list:button_cb(button, pressed, x, y)
 	if button == iup.BUTTON3 and pressed == 0 then
 		local mx, my = iup.GetGlobal("CURSORPOS"):match("(%d+)x(%d+)")
+		local active = cur and "YES" or "NO"
 		local menu = iup.menu{
-			iup.item{title = "Extract Model", action = Extract, active = cur and "YES" or "NO"},
+			iup.item{title = "Extract Model", action = Extract, active = active},
+			iup.separator{},
+			iup.item{title = "Rename Model", action = Rename, active = active},
 		}
 		iup.Popup(menu, mx, my)
 		iup.Destroy(menu)
